@@ -1,0 +1,36 @@
+name: auto-label-by-code
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title =
+              (context.payload.issue && context.payload.issue.title) ||
+              (context.payload.pull_request && context.payload.pull_request.title) ||
+              '';
+            const rules = [
+              {re: /^RN-NX-/i, labels: ['project:renewinitiative-web']},
+              {re: /^KFS-/i,   labels: ['project:kelvinforsouthfulton-web']},
+              {re: /^CF-/i,    labels: ['project:civicfind-web']},
+              {re: /^CP-/i,    labels: ['project:civicpal-web']},
+              {re: /^(BLX-|S-)/i, labels: ['project:blinx-mobile']},
+            ];
+            const toAdd = rules.flatMap(r => r.re.test(title) ? r.labels : []);
+            if (!toAdd.length) return;
+            const num = context.payload.issue?.number ?? context.payload.pull_request?.number;
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: num,
+              labels: toAdd
+            });

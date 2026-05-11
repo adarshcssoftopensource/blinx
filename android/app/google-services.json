@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "419048434130",
+    "project_id": "civicfind-4d1ec",
+    "storage_bucket": "civicfind-4d1ec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:419048434130:android:56e1407113744bd72e400b",
+        "android_client_info": {
+          "package_name": "com.civicfind.blinx.blinx_mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "419048434130-6ajb63j52607d5h0l40s0vm4iq60bua3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.civicfind.blinx.blinx_mobile",
+            "certificate_hash": "fbdb552e149523d5297af2e7bd3c54a6261b791a"
+          }
+        },
+        {
+          "client_id": "419048434130-bdsdfm5vdn3ugri1r3fjn75op0t0d74n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0RZiug_48X5SZslJPMxzuwXu4GzgFDsg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "419048434130-bdsdfm5vdn3ugri1r3fjn75op0t0d74n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "419048434130-i7kb3bu77g8q0bm7gn414na17fuiloqp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.civicfind.blinx.blinxMobile"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

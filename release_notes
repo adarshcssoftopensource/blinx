@@ -1,0 +1,195 @@
+1. RELEASE NOTES (what-shipped)
+Comments:
+QA RELEASE NOTES
+Module: Missions Flow
+Platform: iOS/Android
+Testing Type: UI Testing
+Version: 1.0.1
+Date: 19-02-2026
+Overview:
+UI testing has been completed for the Missions Flow module. The focus was on layout validation, UI elements of visibility, alignment, navigation flow, button states, and static content rendering.
+ Screens Covered:
+Mission List – Empty State
+“No Missions Available” message UI verified
+Refresh List button alignment and visibility checked
+Pull-to-refresh UI validated
+Mission List – Available Missions
+Tabs: Available / Active / Submitted / Completed UI verified
+Mission cards layout validated
+Credits display alignment checked
+Start button UI and placement verified
+Mission Detail Screen
+Mission title and status badge UI validated
+Location, Duration, Difficulty sections alignment verified
+Rewards section (Credits, Reputation, Service Rep) UI checked
+Requirements section layout verified
+Claim Now & Save for later button UI validated
+Submit Proof Screen
+Upload Photos grid UI alignment verified
+Add Photo placeholder visibility confirmed
+Additional Notes text area layout validated
+Submission Requirements section UI checked
+Submit Proof button state verified (Enabled/Disabled)
+Cancel button placement validated
+Mission Activity Screen
+Activity Timeline UI alignment verified
+Status indicators (Proof Submitted, Under Review, Credit Approved) UI validated
+Expert Rewards section layout checked
+View Submit Proof button alignment verified
+View Submit Proof Screen
+Uploaded images display layout verified
+Additional notes text formatting checked
+Profile cards alignment validated
+ Testing Scope:
+UI consistency across screens
+Button alignment and states
+Scroll behavior
+Section spacing and padding
+Static text visibility
+Image placeholder layout
+Badge and status indicator design
+Out of Scope:
+Functional validation
+API validation
+Backend integration
+Reward calculation logic
+Submission workflow logic
+Summary: UI testing for the Missions Flow module has been completed.
+         All screens including Mission List, Mission Detail, Submit Proof, Mission Activity, and View Submit Proof were verified for layout, alignment, button states,
+         and UI consistency.No major UI issues were observed. Selected Image Locally/UI only;no backend upload validation in phase-2.
+2. Feature flags with default states
+Comments: The Apple feature is currently disabled and its state is set to OFF.
+3. Screenshot pack (clearly named and consistent)
+https://drive.google.com/file/d/1UBEayCIc7vimLWnch708zJfeJ6icUA79/view?pli=1
+4. Known issues list (P0 / P1 / P2)
+Comments: All QA issues have been resolved.
+
+5. End-to-end demos click-path (“what I clicked”)
+Logged in with valid credentials
+Navigated to Dashboard
+Clicked on Missions tab
+Opened Mission Details
+Clicked on Submit Proof
+Uploaded image
+Clicked Submit
+Verified success message
+Checked submitted proof in Mission Activity
+Logged out
+E2E Click-Path Tested:
+Login → Dashboard → Missions → Mission Details → Submit Proof → Upload → Submit → Activity Verification
+
+6. RC build links (Android + iOS) including:
+Android build link: https://loadly.io/SH1jKFS7
+iOS build link : https://loadly.io/8cV5CQmm
+7. Version numbers
+Android : 1.0.1
+iOS : 1.0.1
+8. Environment / Base URL
+Staging: https://civicfind-api-staging-110912028053.us-central1.run.app/
+https://civicfind-api-staging-110912028053.us-central1.run.app/
+https://civicfind-api-staging-11091 2028053.us-central1.run.app/
+
+1.Commit the complete Phase-2 closeout packet to- blinx-mobile-main/docs/closeout/phase-2
+                                        Comments- I have pushed the code and created the PR.
+                                        PR Link - https://github.com/eXoDigitalSoftwareHouse/blinx-mobile/pull/26
+
+2. RELEASE NOTES (what shipped)
+   Comments:
+
+=> QA Release Notes
+Module: Missions Flow
+Platform: iOS/Android
+Testing Type: UI Testing
+Version: 1.0.1
+Date: 26-02-2026
+Overview:
+UI testing has been completed for the Missions Flow module. The focus was on layout validation, UI elements of visibility, alignment, navigation flow, button states, and static content rendering.
+
+=> SCREENS COVERED:
+Mission List – Empty State
+“No Missions Available” message UI verified
+Refresh List button alignment and visibility checked
+Pull-to-refresh UI validated
+Mission List – Available Missions
+Tabs: Available / Active / Submitted / Completed UI verified
+Mission cards layout validated
+Credits display alignment checked
+Start button UI and placement verified
+Mission Detail Screen
+Mission title and status badge UI validated
+Location, Duration, Difficulty sections alignment verified
+Rewards section (Credits, Reputation, Service Rep) UI checked
+Requirements section layout verified
+Claim Now & Save for later button UI validated
+Submit Proof Screen
+Upload Photos grid UI alignment verified
+Add Photo placeholder visibility confirmed
+Additional Notes text area layout validated
+Submission Requirements section UI checked
+Submit Proof button state verified (Enabled/Disabled)
+Cancel button placement validated
+Mission Activity Screen
+Activity Timeline UI alignment verified
+Status indicators (Proof Submitted, Under Review, Credit Approved) UI validated
+Expert Rewards section layout checked
+View Submit Proof button alignment verified
+View Submit Proof Screen
+Uploaded images display layout verified
+Additional notes text formatting checked
+Profile cards alignment validated
+
+=> TESTING SCOPE:
+UI consistency across screens
+Button alignment and states
+Scroll behavior
+Section spacing and padding
+Static text visibility
+Image placeholder layout
+Badge and status indicator design
+
+=> OUT OF SCOPE:
+Functional validation
+API validation
+Backend integration
+Reward calculation logic
+Submission workflow logic
+Summary: UI testing for the Missions Flow module has been completed. All screens
+including Mission List, Mission Detail, Submit Proof, Mission Activity, and View Submit
+Proof were verified for layout, alignment, button states, and UI consistency. No major UI
+issues were observed. Image Locally/UI only; no backend upload validation in phase-2.
+
+3. FEATURE FLAGS WITH DEFAULT STATES-
+   Comments: The Apple feature is currently disabled and its state is set to OFF.
+
+4. SCREENSHOT-PACK (clearly named and consistent)-
+   URL-https://drive.google.com/file/d/1UBEayCIc7vimLWnch708zJfeJ6icUA79/view?pli=1
+
+5. KNOWN ISSUES LIST (P0 / P1 / P2)-
+   Comments: All QA issues have been resolved.
+
+ 6. END-TO-END DEMOS CLICK-PATH (“what I clicked”)-
+    Logged in with valid credentials
+    Navigated to Dashboard
+    Clicked on Missions tab
+    Opened Mission Details
+    Clicked on Submit Proof
+    Uploaded image
+    Clicked Submit
+    Verified success message
+    Checked submitted proof in Mission Activity
+    Logged out
+    E2E Click-Path Tested:
+    Login → Dashboard → Missions → Mission Details → Submit Proof → Upload → Submit → Activity Verification
+
+ => Loom link URL: https://www.loom.com/share/155febc6872042eda30d932d5e90207d
+
+8. RC BUILD LINKS (Android + iOS) INCLUDING-
+   Android build link- https://loadly.io/V5OAp6Ht
+     IOS build link  - https://loadly.io/V4zNECYC
+
+ 9. VERSION NUMBERS-
+    Android : 1.0.1
+    IOS : 1.0.1
+
+10. ENVIRONMENT BASE-URL-
+    Staging:  https://civicfind-api-staging-110912028053.us-central1.run.app/

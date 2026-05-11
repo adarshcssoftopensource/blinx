@@ -1,0 +1,238 @@
+{
+  "version": 8,
+  "name": "Blinx Map Style",
+  "metadata": {
+    "blinx:version": "1.0.0",
+    "blinx:phase": "3b",
+    "blinx:renderer": "maplibre",
+    "blinx:basemap": "maptiler"
+  },
+  "glyphs": "https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=cRkGq3FWhpfoGCUq72gO",
+  "sprite": "https://api.maptiler.com/maps/streets/sprite?key=cRkGq3FWhpfoGCUq72gO",
+  "sources": {
+    "maptiler_streets": {
+      "type": "vector",
+      "url": "https://api.maptiler.com/tiles/v3/tiles.json?key=cRkGq3FWhpfoGCUq72gO"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#F5F3EF"
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "maptiler_streets",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "#C8DFF0",
+        "fill-opacity": 1
+      }
+    },
+    {
+      "id": "water-outline",
+      "type": "line",
+      "source": "maptiler_streets",
+      "source-layer": "water",
+      "paint": {
+        "line-color": "#A8C8E8",
+        "line-width": 1
+      }
+    },
+    {
+      "id": "landuse-park",
+      "type": "fill",
+      "source": "maptiler_streets",
+      "source-layer": "landuse",
+      "filter": ["==", "class", "park"],
+      "paint": {
+        "fill-color": "#D4E8C8",
+        "fill-opacity": 0.8
+      }
+    },
+    {
+      "id": "landuse-residential",
+      "type": "fill",
+      "source": "maptiler_streets",
+      "source-layer": "landuse",
+      "filter": ["==", "class", "residential"],
+      "paint": {
+        "fill-color": "#EDE9E3",
+        "fill-opacity": 0.6
+      }
+    },
+    {
+      "id": "landuse-commercial",
+      "type": "fill",
+      "source": "maptiler_streets",
+      "source-layer": "landuse",
+      "filter": ["==", "class", "commercial"],
+      "paint": {
+        "fill-color": "#E8E0D0",
+        "fill-opacity": 0.6
+      }
+    },
+    {
+      "id": "building",
+      "type": "fill",
+      "source": "maptiler_streets",
+      "source-layer": "building",
+      "minzoom": 14,
+      "paint": {
+        "fill-color": "#DDD8D0",
+        "fill-opacity": 0.9,
+        "fill-outline-color": "#C8C0B8"
+      }
+    },
+    {
+      "id": "road-motorway",
+      "type": "line",
+      "source": "maptiler_streets",
+      "source-layer": "transportation",
+      "filter": ["==", "class", "motorway"],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#F5A623",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 6, 2, 14, 8]
+      }
+    },
+    {
+      "id": "road-primary",
+      "type": "line",
+      "source": "maptiler_streets",
+      "source-layer": "transportation",
+      "filter": ["==", "class", "primary"],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#FFFFFF",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1.5, 14, 6]
+      }
+    },
+    {
+      "id": "road-secondary",
+      "type": "line",
+      "source": "maptiler_streets",
+      "source-layer": "transportation",
+      "filter": ["in", "class", "secondary", "tertiary"],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#FFFFFF",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 10, 1, 14, 4]
+      }
+    },
+    {
+      "id": "road-street",
+      "type": "line",
+      "source": "maptiler_streets",
+      "source-layer": "transportation",
+      "filter": ["in", "class", "street", "service"],
+      "minzoom": 13,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#FFFFFF",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.8, 16, 3]
+      }
+    },
+    {
+      "id": "road-label",
+      "type": "symbol",
+      "source": "maptiler_streets",
+      "source-layer": "transportation_name",
+      "minzoom": 13,
+      "layout": {
+        "text-field": "{name}",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": 11,
+        "symbol-placement": "line",
+        "text-max-angle": 30
+      },
+      "paint": {
+        "text-color": "#666666",
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 2
+      }
+    },
+    {
+      "id": "place-city",
+      "type": "symbol",
+      "source": "maptiler_streets",
+      "source-layer": "place",
+      "filter": ["in", "class", "city", "town"],
+      "layout": {
+        "text-field": "{name}",
+        "text-font": ["Noto Sans Bold"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 8, 12, 14, 16],
+        "text-anchor": "center"
+      },
+      "paint": {
+        "text-color": "#2C2C2C",
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 2
+      }
+    },
+    {
+      "id": "place-suburb",
+      "type": "symbol",
+      "source": "maptiler_streets",
+      "source-layer": "place",
+      "filter": ["==", "class", "suburb"],
+      "minzoom": 12,
+      "layout": {
+        "text-field": "{name}",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": 12,
+        "text-anchor": "center"
+      },
+      "paint": {
+        "text-color": "#555555",
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "blinx-poi-circle",
+      "type": "circle",
+      "source": "blinx_objects",
+      "paint": {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 4, 16, 10],
+        "circle-color": "#FF5A1F",
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#FFFFFF"
+      }
+    },
+    {
+      "id": "blinx-poi-label",
+      "type": "symbol",
+      "source": "blinx_objects",
+      "minzoom": 14,
+      "layout": {
+        "text-field": "{name}",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": 12,
+        "text-offset": [0, 1.5],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#2C2C2C",
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 2
+      }
+    }
+  ]
+}
