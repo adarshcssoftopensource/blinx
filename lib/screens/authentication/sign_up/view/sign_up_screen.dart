@@ -166,16 +166,47 @@ class SignUpScreen extends StatelessWidget {
                   child: SegmentedArcLoader(color: Colors.white, size: 26),
                 ),
               )
-            : CustomButton(
-                text: AppConstants.signUp,
-                borderRadius: 30,
-                color: const Color(0xFF2A73EA),
-                isLoading: false,
-                onPressed: () => controller.signUp(context),
+            : Semantics(
+                identifier: 'signup_button',
+                label: 'signup_button',
+                child: CustomButton(
+                  key: const Key('signup_button'),
+                  text: AppConstants.signUp,
+                  borderRadius: 30,
+                  color: const Color(0xFF2A73EA),
+                  isLoading: false,
+                  onPressed: () => controller.signUp(context),
+                ),
               ),
       ),
     );
   }
+  // Widget _signUpButton(SignUpController controller, BuildContext context) {
+  //   return SizedBox(
+  //     width: double.infinity,
+  //     height: 50,
+  //     child: Obx(
+  //       () => controller.isSignUpLoading.value
+  //           ? Container(
+  //               decoration: BoxDecoration(
+  //                 color: const Color(0xFF2A73EA),
+  //                 borderRadius: BorderRadius.circular(30),
+  //               ),
+  //               child: const Center(
+  //                 child: SegmentedArcLoader(color: Colors.white, size: 26),
+  //               ),
+  //             )
+  //           : CustomButton(
+  //               key: const Key('signup_button'),
+  //               text: AppConstants.signUp,
+  //               borderRadius: 30,
+  //               color: const Color(0xFF2A73EA),
+  //               isLoading: false,
+  //               onPressed: () => controller.signUp(context),
+  //             ),
+  //     ),
+  //   );
+  // }
 
   Widget _googleButton(SignUpController controller) {
     return SizedBox(
@@ -192,12 +223,17 @@ class SignUpScreen extends StatelessWidget {
                   child: SegmentedArcLoader(color: Colors.blue, size: 26),
                 ),
               )
-            : CustomButton(
-                text: AppConstants.signUpWithGoogle,
-                isGoogle: true,
-                borderRadius: 30,
-                isLoading: false,
-                onPressed: controller.signUpWithGoogle,
+            : Semantics(
+                identifier: 'google_signup_button',
+                label: 'google_signup_button',
+                child: CustomButton(
+                  key: const Key('google_signup_button'),
+                  text: AppConstants.signUpWithGoogle,
+                  isGoogle: true,
+                  borderRadius: 30,
+                  isLoading: false,
+                  onPressed: controller.signUpWithGoogle,
+                ),
               ),
       ),
     );

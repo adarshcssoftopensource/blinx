@@ -147,14 +147,26 @@ class SignInScreen extends StatelessWidget {
                               ),
                             ),
                           )
-                        : CustomButton(
-                            key: const Key('signin_button'),
-                            text: AppConstants.signIn,
-                            borderRadius: 100,
-                            color: ColorConstants.blueColor,
-                            isLoading: false,
-                            onPressed: controller.validateAndLogin,
+                        : Semantics(
+                            identifier: 'signin_button',
+                            label: 'signin_button',
+                            child: CustomButton(
+                              key: const Key('signin_button'),
+                              text: AppConstants.signIn,
+                              borderRadius: 100,
+                              color: ColorConstants.blueColor,
+                              isLoading: false,
+                              onPressed: controller.validateAndLogin,
+                            ),
                           ),
+                    // : CustomButton(
+                    //     key: const Key('signin_button'),
+                    //     text: AppConstants.signIn,
+                    //     borderRadius: 100,
+                    //     color: ColorConstants.blueColor,
+                    //     isLoading: false,
+                    //     onPressed: controller.validateAndLogin,
+                    //   ),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -197,6 +209,7 @@ class SignInScreen extends StatelessWidget {
                             ),
                           )
                         : CustomButton(
+                            key: const Key('google_signin_button'),
                             text: AppConstants.signInWithGoogle,
                             isGoogle: true,
                             borderRadius: 30,
