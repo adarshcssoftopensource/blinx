@@ -1,0 +1,36 @@
+name: Android Appium Automation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  android-appium-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Start Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel
+
+      - name: Install Dependencies
+        run: mvn clean install
+
+      - name: Run Appium Tests
+        run: mvn test
