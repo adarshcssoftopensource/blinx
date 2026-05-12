@@ -3,7 +3,7 @@ name: Android Appium Automation
 on:
   push:
     branches:
-      - main
+      - qa-login-pipelines
 
 jobs:
   android-appium-test:
