@@ -14,20 +14,21 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
 
     steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Java Setup (Must be before Flutter build)
+      # ── 2. Java (must be before Flutter) ──────────────────────────────────
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # 2. Flutter setup + build APK
+      # ── 3. Flutter + APK ───────────────────────────────────────────────────
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -40,7 +41,7 @@ jobs:
       - name: Build Debug APK
         run: flutter build apk --debug
 
-      # 3. Node + Appium setup
+      # ── 4. Node + Appium ───────────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -51,7 +52,7 @@ jobs:
           npm install -g appium
           appium driver install uiautomator2
 
-      # 4. Run Tests in Emulator
+      # ── 5. Run Appium Tests ────────────────────────────────────────────────
       - name: Run Appium Tests
         uses: reactivecircus/android-emulator-runner@v2
         continue-on-error: true
@@ -62,11 +63,9 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
-            # Use bash to support PIPESTATUS
-            /bin/bash << 'EOF'
             echo "Waiting for device..."
             adb wait-for-device
-            
+
             echo "Installing APK..."
             adb install -r build/app/outputs/flutter-apk/app-debug.apk
 
@@ -74,60 +73,88 @@ jobs:
             appium --address 127.0.0.1 --port 4723 --base-path /wd/hub &
             sleep 25
 
-            echo "Navigating to: test/MobileAutomation"
-            cd test/MobileAutomation
-            
             echo "Executing Maven Tests..."
-            mvn test 2>&1 | tee ../../test_output.txt
-            
-            # Capture the exit code of 'mvn test' specifically
-            echo "${PIPESTATUS[0]}" > ../../test_exit_code.txt
-            EOF
+            mvn -f test/MobileAutomation/pom.xml test > test_output.txt 2>&1
+            echo $? > test_exit_code.txt
+            cat test_output.txt
 
-      # 5. Capture Outcome
+      # ── 6. Capture Test Outcome ────────────────────────────────────────────
       - name: Capture Test Outcome
         id: test_step
         run: |
           EXIT_CODE=$(cat test_exit_code.txt 2>/dev/null || echo "1")
-          echo "Maven Exit Code: $EXIT_CODE"
+          echo "Maven exit code: $EXIT_CODE"
           if [ "$EXIT_CODE" -eq 0 ]; then
             echo "outcome=success" >> "$GITHUB_OUTPUT"
           else
             echo "outcome=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # 6. Upload Logs
-      - name: Upload Logs
+      # ── 7. Upload Test Output ──────────────────────────────────────────────
+      - name: Upload Test Output
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: appium-test-output
           path: test_output.txt
+          retention-days: 7
 
-      # 7. Trello on Failure
-      - name: Trello Ticket
+      # ── 8. Create Trello Card on Failure ───────────────────────────────────
+      - name: Create Trello Ticket on Failure
         if: steps.test_step.outputs.outcome == 'failure'
         env:
           TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
           TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
           TRELLO_LIST_ID: ${{ vars.TRELLO_LIST_ID }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_NUM: ${{ github.run_number }}
         run: |
-          FAILURE_SNIPPET=$(grep -A5 "FAILED\|Error" test_output.txt | head -15 || echo "Check logs.")
-          curl -s -X POST "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
-            --data-urlencode "idList=${TRELLO_LIST_ID}" \
-            --data-urlencode "name=❌ QA Failure: ${{ github.ref_name }}" \
-            --data-urlencode "desc=Run: ${RUN_URL} Log: ${FAILURE_SNIPPET}"
+          echo "Tests failed — creating Trello card..."
 
-      # 8. PR on Success
-      - name: Create PR
+          FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception\|Tests run" test_output.txt \
+            | head -20 | cut -c1-500 || echo "See CI logs for details.")
+
+          DESCRIPTION=$(printf 'Automation tests failed on branch: %s\n\nFailed at: %s\nRun logs: %s\n\n== Failure snippet ==\n%s' \
+            "$BRANCH" \
+            "$(date -u '+%Y-%m-%d %H:%M UTC')" \
+            "$RUN_URL" \
+            "$FAILURE_SNIPPET")
+
+          curl -s -X POST \
+            "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
+            --data-urlencode "idList=${TRELLO_LIST_ID}" \
+            --data-urlencode "name=QA Failure: ${BRANCH} [run #${RUN_NUM}]" \
+            --data-urlencode "desc=${DESCRIPTION}" \
+            --data-urlencode "pos=top"
+
+      # ── 9. Create Pull Request on Success ─────────────────────────────────
+      - name: Create Pull Request on Success
         if: steps.test_step.outputs.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+          RUN_NUM: ${{ github.run_number }}
         run: |
-          EXISTING=$(gh pr list --head "${{ github.ref_name }}" --base main --json number --jq '.[0].number')
-          if [ -z "$EXISTING" ]; then
-            gh pr create --title "Auto-PR: ${{ github.ref_name }} passed QA" \
-              --body "Automated PR created after successful Appium tests." \
-              --base main --head "${{ github.ref_name }}"
+          echo "All tests passed — creating PR to main..."
+
+          EXISTING=$(gh pr list \
+            --head "$BRANCH" \
+            --base main \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for $BRANCH -> main. Skipping."
+          else
+            PR_BODY=$(printf 'Automated PR after all Appium tests passed on %s.\n\nRun: %s\nTriggered by: @%s' \
+              "$BRANCH" "$RUN_URL" "$ACTOR")
+
+            gh pr create \
+              --title "Auto-PR: $BRANCH -> main [run #$RUN_NUM]" \
+              --body "$PR_BODY" \
+              --base main \
+              --head "$BRANCH"
           fi
