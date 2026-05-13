@@ -1,10 +1,10 @@
-name: QA Pipeline (Appium & Trello)
+name: QA Pipeline (Flutter & Trello)
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - appium-devops  # Updated branch name
+      - appium-devops
       - 'feature/*'
 
 permissions:
@@ -16,20 +16,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Setup Flutter
+      # ── 2. Flutter setup ───────────────────────────────────────────────────
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.22.0'
           channel: 'stable'
           cache: true
 
       - name: Install Flutter Dependencies
         run: flutter pub get
 
-      # Setup Appium Server
+      # ── 3. Appium / Node setup ─────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -40,19 +42,34 @@ jobs:
           npm install -g appium
           appium driver install uiautomator2
 
-      # Run Tests
+      # ── 4. Run tests ───────────────────────────────────────────────────────
       - name: Run Tests
         id: test_step
         continue-on-error: true
         run: |
-          flutter test
-          if [ $? -eq 0 ]; then
-            echo "outcome=success" >> $GITHUB_OUTPUT
+          set +e
+          flutter test --reporter=expanded 2>&1 | tee flutter_test_output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+
+          echo "Flutter test exit code: $EXIT_CODE"
+
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "outcome=success" >> "$GITHUB_OUTPUT"
           else
-            echo "outcome=failure" >> $GITHUB_OUTPUT
+            echo "outcome=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # Create Trello Card on Failure
+      # ── 5. Upload test output ──────────────────────────────────────────────
+      - name: Upload Test Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-test-output
+          path: flutter_test_output.txt
+          retention-days: 7
+
+      # ── 6. Create Trello Card on Failure ───────────────────────────────────
       - name: Create Trello Ticket on Failure
         if: steps.test_step.outputs.outcome == 'failure'
         env:
@@ -60,22 +77,60 @@ jobs:
           TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
           TRELLO_LIST_ID: ${{ vars.TRELLO_LIST_ID }}
         run: |
-          echo "Test failed. Sending to Trello..."
-          curl -X POST "https://api.trello.com/1/cards?key=$TRELLO_KEY&token=$TRELLO_TOKEN" \
+          echo "Tests failed — creating Trello card..."
+
+          FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception" flutter_test_output.txt | head -20 | cut -c1-500 || echo "See CI logs for details.")
+
+          DESCRIPTION="Automation tests failed on branch: ${{ github.ref_name }}
+
+          Failed at: $(date -u '+%Y-%m-%d %H:%M UTC')
+          Run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          == Failure snippet ==
+          ${FAILURE_SNIPPET}"
+
+          curl --fail -X POST "https://api.trello.com/1/cards" \
+            -G \
+            --data-urlencode "key=$TRELLO_KEY" \
+            --data-urlencode "token=$TRELLO_TOKEN" \
             --data-urlencode "idList=$TRELLO_LIST_ID" \
-            --data-urlencode "name=❌ Appium Failure: ${{ github.ref_name }}" \
-            --data-urlencode "desc=Automation tests failed on branch ${{ github.ref_name }}. View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --data-urlencode "name=QA Failure: ${{ github.ref_name }} [run #${{ github.run_number }}]" \
+            --data-urlencode "desc=${DESCRIPTION}" \
             --data-urlencode "pos=top"
 
-      # Create Pull Request on Success
+          echo "Trello card created."
+
+      # ── 7. Create Pull Request on Success ─────────────────────────────────
       - name: Create Pull Request on Success
         if: steps.test_step.outputs.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Test passed. Creating PR to main..."
-          gh pr create \
-            --title "Auto-PR: ${{ github.ref_name }} Passed QA" \
-            --body "Automated PR created by GitHub Actions after successful Appium test execution." \
+          echo "All tests passed — creating PR to main..."
+
+          EXISTING=$(gh pr list \
+            --head "${{ github.ref_name }}" \
             --base main \
-            --head ${{ github.ref_name }}
+            --json number \
+            --jq '.[0].number')
+
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for ${{ github.ref_name }} → main. Skipping creation."
+          else
+
+            PR_BODY="Automated PR created by GitHub Actions after all Flutter tests passed.
+
+            Run:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Triggered by:
+            @${{ github.actor }}"
+
+            gh pr create \
+              --title "Auto-PR: ${{ github.ref_name }} passed QA [run #${{ github.run_number }}]" \
+              --body "$PR_BODY" \
+              --base main \
+              --head "${{ github.ref_name }}"
+
+            echo "PR created."
+          fi
