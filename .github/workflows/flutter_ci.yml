@@ -79,26 +79,24 @@ jobs:
         run: |
           echo "Tests failed — creating Trello card..."
 
-          FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception" flutter_test_output.txt | head -20 | cut -c1-500 || echo "See CI logs for details.")
+          FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception" flutter_test_output.txt \
+            | head -20 | cut -c1-500 || echo "See CI logs for details.")
 
           DESCRIPTION="Automation tests failed on branch: ${{ github.ref_name }}
-
-          Failed at: $(date -u '+%Y-%m-%d %H:%M UTC')
-          Run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-          == Failure snippet ==
-          ${FAILURE_SNIPPET}"
-
-          curl --fail -X POST "https://api.trello.com/1/cards" \
-            -G \
-            --data-urlencode "key=$TRELLO_KEY" \
-            --data-urlencode "token=$TRELLO_TOKEN" \
-            --data-urlencode "idList=$TRELLO_LIST_ID" \
-            --data-urlencode "name=QA Failure: ${{ github.ref_name }} [run #${{ github.run_number }}]" \
-            --data-urlencode "desc=${DESCRIPTION}" \
-            --data-urlencode "pos=top"
-
-          echo "Trello card created."
+            Failed at: $(date -u '+%Y-%m-%d %H:%M UTC')
+            Run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            == Failure snippet ==
+            ${FAILURE_SNIPPET}"
+            
+                      curl --fail -s -X POST \
+                        "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
+                        --data-urlencode "idList=${TRELLO_LIST_ID}" \
+                        --data-urlencode "name=QA Failure: ${{ github.ref_name }} [run #${{ github.run_number }}]" \
+                        --data-urlencode "desc=${DESCRIPTION}" \
+                        --data-urlencode "pos=top"
+            
+                      echo "Trello card created."
 
       # ── 7. Create Pull Request on Success ─────────────────────────────────
       - name: Create Pull Request on Success
