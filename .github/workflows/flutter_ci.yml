@@ -1,10 +1,10 @@
-name: QA Pipeline (Trello & PR)
+name: QA Pipeline (Appium & Trello)
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - appium-devops
+      - qa-test-branch
       - 'feature/*'
 
 permissions:
@@ -19,51 +19,59 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      #  Setup Environment for Appium (Node.js)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          channel: 'stable'
-          cache: true
+          node-version: '20'
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Install Appium & Dependencies
+        run: |
+          npm install -g appium
+          # Install any drivers you need (e.g., uiautomator2 for Android)
+          appium driver install uiautomator2
+          npm install
 
-      - name: Run Flutter Tests
+      # Run Appium Tests
+      - name: Run Tests
         id: test_step
         continue-on-error: true
         run: |
-          flutter test
-          # Store the exit code (0 for success, 1+ for failure)
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          # Replace 'npm test' with your actual test command (e.g., pytest or mocha)
+          npm test
+          if [ $? -eq 0 ]; then
+            echo "outcome=success" >> $GITHUB_OUTPUT
+          else
+            echo "outcome=failure" >> $GITHUB_OUTPUT
+          fi
 
-      #  STEP: Create Trello Card if Tests Failed
+      #  Create Trello Card on Failure
       - name: Create Trello Ticket on Failure
-        if: steps.test_step.outputs.exit_code != '0'
+        if: steps.test_step.outputs.outcome == 'failure'
         env:
           TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
           TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
           TRELLO_LIST_ID: ${{ vars.TRELLO_LIST_ID }}
         run: |
-          echo "Tests failed. Posting to Trello..."
+          echo "Test failed. Sending to Trello..."
           curl --request POST \
             --url "https://api.trello.com/1/cards" \
-            --header 'Accept: application/json' \
             --query "key=$TRELLO_KEY" \
             --query "token=$TRELLO_TOKEN" \
             --data-urlencode "idList=$TRELLO_LIST_ID" \
-            --data-urlencode "name=Test Failure: ${{ github.ref_name }}" \
-            --data-urlencode "desc=Pipeline failed for branch ${{ github.ref_name }}. View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --data-urlencode "name= Appium Failure: ${{ github.ref_name }}" \
+            --data-urlencode "desc=Mobile automation tests failed. View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --data-urlencode "pos=top"
 
-      #  STEP: Create PR to Main if Tests Passed
+      # Create Pull Request on Success
       - name: Create Pull Request on Success
-        if: steps.test_step.outputs.exit_code == '0'
+        if: steps.test_step.outputs.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Tests passed. Opening Pull Request..."
+          echo "Test passed. Creating PR..."
           gh pr create \
-            --title "Auto-PR: ${{ github.ref_name }} passed QA" \
-            --body "Automated PR generated because flutter tests passed successfully on branch ${{ github.ref_name }}." \
+            --title "Auto-PR: ${{ github.ref_name }} Passed QA" \
+            --body "Automated PR created by GitHub Actions after successful Appium test execution." \
             --base main \
             --head ${{ github.ref_name }}
