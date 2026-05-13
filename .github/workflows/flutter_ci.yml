@@ -20,11 +20,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ── 2. Flutter setup + build debug APK ────────────────────────────────
+      # ── 2. Java setup (CRITICAL: Must be before Flutter Build) ────────────
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # ── 3. Flutter setup + build debug APK ────────────────────────────────
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.9'
           channel: 'stable'
           cache: true
 
@@ -33,13 +39,6 @@ jobs:
 
       - name: Build Debug APK
         run: flutter build apk --debug
-
-      # ── 3. Java setup ─────────────────────────────────────────────────────
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
 
       # ── 4. Node + Appium setup ─────────────────────────────────────────────
       - name: Setup Node.js
@@ -70,7 +69,7 @@ jobs:
 
             echo "Starting Appium server..."
             appium --address 127.0.0.1 --port 4723 --base-path /wd/hub &
-            sleep 8
+            sleep 15
 
             echo "Running Maven tests from test/MobileAutomation..."
             cd test/MobileAutomation
@@ -122,14 +121,12 @@ jobs:
             "$RUN_URL" \
             "$FAILURE_SNIPPET")
 
-          RESPONSE=$(curl -s -X POST \
+          curl -s -X POST \
             "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
             --data-urlencode "idList=${TRELLO_LIST_ID}" \
             --data-urlencode "name=QA Failure: ${BRANCH} [run #${RUN_NUM}]" \
             --data-urlencode "desc=${DESCRIPTION}" \
-            --data-urlencode "pos=top" 2>&1) || true
-
-          echo "Trello response: $RESPONSE"
+            --data-urlencode "pos=top"
 
       # ── 10. Create Pull Request on Success ────────────────────────────────
       - name: Create Pull Request on Success
@@ -143,14 +140,10 @@ jobs:
         run: |
           echo "All tests passed — creating PR to main..."
 
-          EXISTING=$(gh pr list \
-            --head "$BRANCH" \
-            --base main \
-            --json number \
-            --jq '.[0].number')
+          EXISTING=$(gh pr list --head "$BRANCH" --base main --json number --jq '.[0].number')
 
           if [ -n "$EXISTING" ]; then
-            echo "PR #$EXISTING already exists for $BRANCH -> main. Skipping."
+            echo "PR #$EXISTING already exists. Skipping creation."
           else
             PR_BODY=$(printf 'Automated PR after all Appium tests passed on %s.\n\nRun: %s\nTriggered by: @%s' \
               "$BRANCH" "$RUN_URL" "$ACTOR")
@@ -160,6 +153,4 @@ jobs:
               --body "$PR_BODY" \
               --base main \
               --head "$BRANCH"
-
-            echo "PR created."
           fi
