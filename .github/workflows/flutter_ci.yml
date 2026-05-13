@@ -19,7 +19,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      #  Setup Flutter
+      # Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -40,7 +40,7 @@ jobs:
           npm install -g appium
           appium driver install uiautomator2
 
-      #  Run Tests
+      # Run Tests
       - name: Run Tests
         id: test_step
         continue-on-error: true
@@ -61,12 +61,9 @@ jobs:
           TRELLO_LIST_ID: ${{ vars.TRELLO_LIST_ID }}
         run: |
           echo "Test failed. Sending to Trello..."
-          curl --request POST \
-            --url "https://api.trello.com/1/cards" \
-            --query "key=$TRELLO_KEY" \
-            --query "token=$TRELLO_TOKEN" \
+          curl -X POST "https://api.trello.com/1/cards?key=$TRELLO_KEY&token=$TRELLO_TOKEN" \
             --data-urlencode "idList=$TRELLO_LIST_ID" \
-            --data-urlencode "name= Appium Failure: ${{ github.ref_name }}" \
+            --data-urlencode "name=❌ Appium Failure: ${{ github.ref_name }}" \
             --data-urlencode "desc=Automation tests failed on branch ${{ github.ref_name }}. View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --data-urlencode "pos=top"
 
