@@ -24,7 +24,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          Flutter-version: '3.41.9'
+          flutter-version: '3.41.9'
           channel: 'stable'
           cache: true
 
@@ -60,7 +60,7 @@ jobs:
             echo "outcome=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # ── 5. Upload test output ──────────────────────────────────────────────
+      # ── 5. Upload test output (always, for debugging) ──────────────────────
       - name: Upload Test Output
         if: always()
         uses: actions/upload-artifact@v4
@@ -76,59 +76,61 @@ jobs:
           TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
           TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
           TRELLO_LIST_ID: ${{ vars.TRELLO_LIST_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_NUM: ${{ github.run_number }}
         run: |
           echo "Tests failed — creating Trello card..."
 
           FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception" flutter_test_output.txt \
             | head -20 | cut -c1-500 || echo "See CI logs for details.")
 
-          DESCRIPTION="Automation tests failed on branch: ${{ github.ref_name }}
-            Failed at: $(date -u '+%Y-%m-%d %H:%M UTC')
-            Run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            
-            == Failure snippet ==
-            ${FAILURE_SNIPPET}"
-            
-                      curl --fail -s -X POST \
-                        "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
-                        --data-urlencode "idList=${TRELLO_LIST_ID}" \
-                        --data-urlencode "name=QA Failure: ${{ github.ref_name }} [run #${{ github.run_number }}]" \
-                        --data-urlencode "desc=${DESCRIPTION}" \
-                        --data-urlencode "pos=top"
-            
-                      echo "Trello card created."
+          DESCRIPTION=$(printf 'Automation tests failed on branch: %s\n\nFailed at: %s\nRun logs: %s\n\n== Failure snippet ==\n%s' \
+            "$BRANCH" \
+            "$(date -u '+%Y-%m-%d %H:%M UTC')" \
+            "$RUN_URL" \
+            "$FAILURE_SNIPPET")
+
+          echo "Calling Trello API..."
+          RESPONSE=$(curl -v -s -X POST \
+            "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
+            --data-urlencode "idList=${TRELLO_LIST_ID}" \
+            --data-urlencode "name=QA Failure: ${BRANCH} [run #${RUN_NUM}]" \
+            --data-urlencode "desc=${DESCRIPTION}" \
+            --data-urlencode "pos=top" 2>&1) || true
+
+          echo "Trello response:"
+          echo "$RESPONSE"
 
       # ── 7. Create Pull Request on Success ─────────────────────────────────
       - name: Create Pull Request on Success
         if: steps.test_step.outputs.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+          RUN_NUM: ${{ github.run_number }}
         run: |
           echo "All tests passed — creating PR to main..."
 
           EXISTING=$(gh pr list \
-            --head "${{ github.ref_name }}" \
+            --head "$BRANCH" \
             --base main \
             --json number \
             --jq '.[0].number')
 
           if [ -n "$EXISTING" ]; then
-            echo "PR #$EXISTING already exists for ${{ github.ref_name }} → main. Skipping creation."
+            echo "PR #$EXISTING already exists for $BRANCH -> main. Skipping."
           else
-
-            PR_BODY="Automated PR created by GitHub Actions after all Flutter tests passed.
-
-            Run:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            Triggered by:
-            @${{ github.actor }}"
+            PR_BODY=$(printf 'Automated PR after all Flutter tests passed on %s.\n\nRun: %s\nTriggered by: @%s' \
+              "$BRANCH" "$RUN_URL" "$ACTOR")
 
             gh pr create \
-              --title "Auto-PR: ${{ github.ref_name }} passed QA [run #${{ github.run_number }}]" \
+              --title "Auto-PR: ${BRANCH} passed QA [run #${RUN_NUM}]" \
               --body "$PR_BODY" \
               --base main \
-              --head "${{ github.ref_name }}"
+              --head "$BRANCH"
 
             echo "PR created."
           fi
