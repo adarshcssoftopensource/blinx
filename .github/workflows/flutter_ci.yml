@@ -1,29 +1,57 @@
-name: Test Trello Logic Directly
+name: Direct Logic Test
 
 on:
-  workflow_dispatch: # This lets you click a "Run" button in GitHub
+  workflow_dispatch: # Allows you to run this manually from the Actions tab
+  push:
+    branches:
+      - appium-devops
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  test_trello:
+  test_logic:
     runs-on: ubuntu-latest
     steps:
-      - name: Force a Failure
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # SIMULATED TEST STEP
+      # Change 'failure' to 'success' below to test the PR side of things
+      - name: Run Simulated Test
         id: test_step
         run: |
-          echo "Simulating a failed test..."
-          echo "outcome=failure" >> $GITHUB_OUTPUT
+          echo "Simulating test execution..."
+          RESULT="failure" 
+          echo "outcome=$RESULT" >> $GITHUB_OUTPUT
 
-      - name: Create Trello Ticket
+      # EXECUTE TRELLO LOGIC
+      - name: Create Trello Ticket on Failure
         if: steps.test_step.outputs.outcome == 'failure'
         env:
           TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
           TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
           TRELLO_LIST_ID: ${{ vars.TRELLO_LIST_ID }}
         run: |
+          echo "Test failed! Sending to Trello..."
           curl --request POST \
             --url "https://api.trello.com/1/cards" \
             --query "key=$TRELLO_KEY" \
             --query "token=$TRELLO_TOKEN" \
             --data-urlencode "idList=$TRELLO_LIST_ID" \
-            --data-urlencode "name=🧪 TEST: Manual Trigger" \
-            --data-urlencode "desc=This is a test of the GitHub Action logic."
+            --data-urlencode "name= TEST FAILURE: ${{ github.ref_name }}" \
+            --data-urlencode "desc=This is a direct logic test run for the appium-devops branch."
+
+      # EXECUTE PR LOGIC
+      - name: Create Pull Request on Success
+        if: steps.test_step.outputs.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Test passed! Simulating PR..."
+          gh pr create \
+            --title "Test PR: ${{ github.ref_name }}" \
+            --body "This is a simulated PR for testing purposes." \
+            --base main \
+            --head ${{ github.ref_name }}
