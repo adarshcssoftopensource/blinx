@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import io.appium.java_client.android.AndroidDriver;
@@ -25,25 +26,61 @@ public class Login {
 	            new URL("http://127.0.0.1:4723/wd/hub"),
 	            dc
 	    );        //appuim 1x 
-	    Thread.sleep(1000);
+	    
+	    
 	    driver.findElement(By.xpath("//android.widget.Button[@content-desc=\"Skip\"]")).click();
-	    Thread.sleep(1000);
-	    driver.findElement(By.xpath("(//android.widget.EditText)[1]")).click();
-	    Thread.sleep(2000);  // reduce unnecessary wait
-	    driver.findElement(By.xpath("(//android.widget.EditText)[1]")).clear();  // add this
-	    driver.findElement(By.xpath("(//android.widget.EditText)[1]")).sendKeys("chris@yopmail.com");
-	    Thread.sleep(5000);
-	    driver.findElement(By.xpath("(//android.widget.EditText)[2]")).click();
+	    driver.findElementByAccessibilityId("Sign Up").click();
 	    Thread.sleep(2000);
-	    driver.findElement(By.xpath("(//android.widget.EditText)[2]")).clear();  // add this
-	    driver.findElement(By.xpath("(//android.widget.EditText)[2]")).sendKeys("Password@123");
-	    Thread.sleep(5000);
-	        try {
-	        driver.hideKeyboard();
-	    } catch (Exception e) {
-	        System.out.println("Keyboard already hidden");
-	    }
-	
+	    WebElement usernameField = driver.findElement(By.xpath("//android.widget.EditText[1]"));
+	    usernameField.click();
+	    usernameField.clear();
+	    usernameField.sendKeys("testuserone");
+	    Thread.sleep(1000);
+	    // 3) Email
+	    WebElement emailField = driver.findElement(By.xpath("//android.widget.EditText[2]"));
+	    emailField.click();
+	    emailField.clear();
+	    emailField.sendKeys("testuserone@yopmail.com");
+	    Thread.sleep(1000);
+	    // 4) Password
+	    WebElement passwordField = driver.findElement(By.xpath("//android.widget.EditText[3]"));
+	    passwordField.click();
+	    passwordField.clear();
+	    passwordField.sendKeys("Testcs@123");
+	    
+       try {
+       driver.hideKeyboard();
+   } catch (Exception e) {
+       System.out.println("Keyboard already hidden");
+   }
+	    driver.findElementByAccessibilityId("Sign Up").click();
+	   
+	//     Thread.sleep(1000);
+	// //    driver.findElement(By.xpath("//android.widget.Button[@content-desc=\"Skip\"]")).click();
+	//     Thread.sleep(1000);
+	//     driver.findElement(By.xpath("(//android.widget.EditText)[1]")).click();
+	//     Thread.sleep(2000);  // reduce unnecessary wait
+	//     driver.findElement(By.xpath("(//android.widget.EditText)[1]")).clear();  // add this
+	//     driver.findElement(By.xpath("(//android.widget.EditText)[1]")).sendKeys("chris@yopmail.com");
+	//     Thread.sleep(5000);
+	//     driver.findElement(By.xpath("(//android.widget.EditText)[2]")).click();
+	//     Thread.sleep(2000);
+	//     driver.findElement(By.xpath("(//android.widget.EditText)[2]")).clear();  // add this
+	//     driver.findElement(By.xpath("(//android.widget.EditText)[2]")).sendKeys("Password@123");
+	//     Thread.sleep(5000);
+	    
+	    
+	//         try {
+	//         driver.hideKeyboard();
+	//     } catch (Exception e) {
+	//         System.out.println("Keyboard already hidden");
+	//     }
+	//         WebElement signInBtn = driver.findElement(
+	//                 By.xpath("//android.widget.Button[@content-desc='Sign In']")
+	//         );
+	//         signInBtn.click();
+   
+	        
         
 	}
 }
