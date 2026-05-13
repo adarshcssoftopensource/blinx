@@ -1,4 +1,4 @@
-name: QA Pipeline (Flutter & Trello)
+name: QA Pipeline (Appium & Trello)
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ── 2. Flutter setup ───────────────────────────────────────────────────
+      # ── 2. Flutter setup + build debug APK ────────────────────────────────
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -31,7 +31,17 @@ jobs:
       - name: Install Flutter Dependencies
         run: flutter pub get
 
-      # ── 3. Appium / Node setup ─────────────────────────────────────────────
+      - name: Build Debug APK
+        run: flutter build apk --debug
+
+      # ── 3. Java setup ─────────────────────────────────────────────────────
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # ── 4. Node + Appium setup ─────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -42,34 +52,55 @@ jobs:
           npm install -g appium
           appium driver install uiautomator2
 
-      # ── 4. Run tests ───────────────────────────────────────────────────────
-      - name: Run Tests
-        id: test_step
+      # ── 5. Android SDK ─────────────────────────────────────────────────────
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ── 6. Run Appium tests inside Android emulator ────────────────────────
+      - name: Run Appium Tests
+        uses: reactivecircus/android-emulator-runner@v2
         continue-on-error: true
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel
+          script: |
+            echo "Installing Blinx APK on emulator..."
+            adb install -r build/app/outputs/flutter-apk/app-debug.apk
+
+            echo "Starting Appium server..."
+            appium --address 127.0.0.1 --port 4723 --base-path /wd/hub &
+            sleep 8
+
+            echo "Running Maven tests from test/MobileAutomation..."
+            cd test/MobileAutomation
+            set +e
+            mvn test 2>&1 | tee ../../test_output.txt
+            echo ${PIPESTATUS[0]} > ../../test_exit_code.txt
+            set -e
+
+      # ── 7. Capture test result ─────────────────────────────────────────────
+      - name: Capture Test Outcome
+        id: test_step
         run: |
-          set +e
-          flutter test --reporter=expanded 2>&1 | tee flutter_test_output.txt
-          EXIT_CODE=${PIPESTATUS[0]}
-          set -e
-
-          echo "Flutter test exit code: $EXIT_CODE"
-
+          EXIT_CODE=$(cat test_exit_code.txt 2>/dev/null || echo "1")
+          echo "Maven exit code: $EXIT_CODE"
           if [ "$EXIT_CODE" -eq 0 ]; then
             echo "outcome=success" >> "$GITHUB_OUTPUT"
           else
             echo "outcome=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # ── 5. Upload test output (always, for debugging) ──────────────────────
+      # ── 8. Upload test output ──────────────────────────────────────────────
       - name: Upload Test Output
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-test-output
-          path: flutter_test_output.txt
+          name: appium-test-output
+          path: test_output.txt
           retention-days: 7
 
-      # ── 6. Create Trello Card on Failure ───────────────────────────────────
+      # ── 9. Create Trello Card on Failure ───────────────────────────────────
       - name: Create Trello Ticket on Failure
         if: steps.test_step.outputs.outcome == 'failure'
         env:
@@ -82,7 +113,7 @@ jobs:
         run: |
           echo "Tests failed — creating Trello card..."
 
-          FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception" flutter_test_output.txt \
+          FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception\|Tests run" test_output.txt \
             | head -20 | cut -c1-500 || echo "See CI logs for details.")
 
           DESCRIPTION=$(printf 'Automation tests failed on branch: %s\n\nFailed at: %s\nRun logs: %s\n\n== Failure snippet ==\n%s' \
@@ -91,18 +122,16 @@ jobs:
             "$RUN_URL" \
             "$FAILURE_SNIPPET")
 
-          echo "Calling Trello API..."
-          RESPONSE=$(curl -v -s -X POST \
+          RESPONSE=$(curl -s -X POST \
             "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
             --data-urlencode "idList=${TRELLO_LIST_ID}" \
             --data-urlencode "name=QA Failure: ${BRANCH} [run #${RUN_NUM}]" \
             --data-urlencode "desc=${DESCRIPTION}" \
             --data-urlencode "pos=top" 2>&1) || true
 
-          echo "Trello response:"
-          echo "$RESPONSE"
+          echo "Trello response: $RESPONSE"
 
-      # ── 7. Create Pull Request on Success ─────────────────────────────────
+      # ── 10. Create Pull Request on Success ────────────────────────────────
       - name: Create Pull Request on Success
         if: steps.test_step.outputs.outcome == 'success'
         env:
@@ -123,7 +152,7 @@ jobs:
           if [ -n "$EXISTING" ]; then
             echo "PR #$EXISTING already exists for $BRANCH -> main. Skipping."
           else
-            PR_BODY=$(printf 'Automated PR after all Flutter tests passed on %s.\n\nRun: %s\nTriggered by: @%s' \
+            PR_BODY=$(printf 'Automated PR after all Appium tests passed on %s.\n\nRun: %s\nTriggered by: @%s' \
               "$BRANCH" "$RUN_URL" "$ACTOR")
 
             gh pr create \
