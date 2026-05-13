@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - appium-devops
+      - appium-devops  # Updated branch name
       - 'feature/*'
 
 permissions:
@@ -19,33 +19,40 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      #  Setup Environment for Appium (Node.js)
+      #  Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      # Setup Appium Server
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Appium & Dependencies
+      - name: Install Appium
         run: |
           npm install -g appium
-          # Install any drivers you need (e.g., uiautomator2 for Android)
           appium driver install uiautomator2
-          npm install
 
-      # Run Appium Tests
+      #  Run Tests
       - name: Run Tests
         id: test_step
         continue-on-error: true
         run: |
-          # Replace 'npm test' with your actual test command (e.g., pytest or mocha)
-          npm test
+          flutter test
           if [ $? -eq 0 ]; then
             echo "outcome=success" >> $GITHUB_OUTPUT
           else
             echo "outcome=failure" >> $GITHUB_OUTPUT
           fi
 
-      #  Create Trello Card on Failure
+      # Create Trello Card on Failure
       - name: Create Trello Ticket on Failure
         if: steps.test_step.outputs.outcome == 'failure'
         env:
@@ -60,7 +67,7 @@ jobs:
             --query "token=$TRELLO_TOKEN" \
             --data-urlencode "idList=$TRELLO_LIST_ID" \
             --data-urlencode "name= Appium Failure: ${{ github.ref_name }}" \
-            --data-urlencode "desc=Mobile automation tests failed. View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --data-urlencode "desc=Automation tests failed on branch ${{ github.ref_name }}. View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --data-urlencode "pos=top"
 
       # Create Pull Request on Success
@@ -69,7 +76,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Test passed. Creating PR..."
+          echo "Test passed. Creating PR to main..."
           gh pr create \
             --title "Auto-PR: ${{ github.ref_name }} Passed QA" \
             --body "Automated PR created by GitHub Actions after successful Appium test execution." \
