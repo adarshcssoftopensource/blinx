@@ -19,19 +19,20 @@ jobs:
 
     env:
       ANDROID_HOME: /home/azureuser/android-sdk
-      PATH: /home/azureuser/android-sdk/platform-tools:/home/azureuser/android-sdk/emulator:/home/azureuser/android-sdk/cmdline-tools/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      FLUTTER_HOME: /home/azureuser/flutter
+      PATH: /home/azureuser/flutter/bin:/home/azureuser/android-sdk/platform-tools:/home/azureuser/android-sdk/emulator:/home/azureuser/android-sdk/cmdline-tools/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
     steps:
 
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       # 1. Checkout Repository
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       # 2. Verify Installed Dependencies
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       - name: Verify Java
         run: java -version
 
@@ -47,42 +48,20 @@ jobs:
       - name: Verify Appium
         run: appium -v
 
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       # 3. Restart ADB
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       - name: Restart ADB
         run: |
           adb kill-server || true
           adb start-server
 
-      # ─────────────────────────────────────────────
-      # 4. Install Flutter Dependencies
-      # ─────────────────────────────────────────────
-      - name: Install Flutter Dependencies
-        run: flutter pub get
-
-      # ─────────────────────────────────────────────
-      # 5. Build APK
-      # ─────────────────────────────────────────────
-      - name: Build Debug APK
-        run: flutter build apk --debug
-
-      # ─────────────────────────────────────────────
-      # 6. Upload APK Artifact
-      # ─────────────────────────────────────────────
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 7
-
-      # ─────────────────────────────────────────────
-      # 7. Verify Emulator
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
+      # 4. Verify Emulator
+      # ------------------------------------------------
       - name: Verify Emulator
         run: |
-          echo "Checking connected Android devices..."
+          echo "Connected devices:"
           adb devices
 
           echo "Waiting for emulator..."
@@ -97,45 +76,61 @@ jobs:
 
           echo "Android emulator fully booted"
 
-          adb shell getprop sys.boot_completed
-
-      # ─────────────────────────────────────────────
-      # 8. Verify Appium Server
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
+      # 5. Verify Appium Server
+      # ------------------------------------------------
       - name: Verify Appium Server
         run: |
-          echo "Checking Appium server..."
-
           curl --fail --retry 5 --retry-delay 5 \
-            http://127.0.0.1:4723/wd/hub/status
+          http://127.0.0.1:4723/wd/hub/status
 
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
+      # 6. Install Flutter Dependencies
+      # ------------------------------------------------
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      # ------------------------------------------------
+      # 7. Build APK
+      # ------------------------------------------------
+      - name: Build APK
+        run: flutter build apk --debug
+
+      # ------------------------------------------------
+      # 8. Upload APK Artifact
+      # ------------------------------------------------
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+      # ------------------------------------------------
       # 9. Install APK Into Emulator
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       - name: Install APK
         run: |
-          echo "Installing APK into emulator..."
-
           adb install -r build/app/outputs/flutter-apk/app-debug.apk
 
-      # ─────────────────────────────────────────────
-      # 10. Run Appium Maven Tests
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
+      # 10. Run Appium Tests
+      # ------------------------------------------------
       - name: Run Appium Tests
         continue-on-error: true
         run: |
-          echo "Running Maven Appium tests..."
+          echo "Running Appium Maven tests..."
 
           mvn -f test/MobileAutomation/pom.xml test \
-            > test_output.txt 2>&1
+          > test_output.txt 2>&1
 
           echo $? > test_exit_code.txt
 
           cat test_output.txt
 
-      # ─────────────────────────────────────────────
-      # 11. Capture Test Outcome
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
+      # 11. Capture Test Result
+      # ------------------------------------------------
       - name: Capture Test Outcome
         id: test_step
         run: |
@@ -149,10 +144,10 @@ jobs:
             echo "outcome=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       # 12. Upload Test Logs
-      # ─────────────────────────────────────────────
-      - name: Upload Test Output
+      # ------------------------------------------------
+      - name: Upload Test Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -160,10 +155,10 @@ jobs:
           path: test_output.txt
           retention-days: 7
 
-      # ─────────────────────────────────────────────
-      # 13. Create Trello Ticket On Failure
-      # ─────────────────────────────────────────────
-      - name: Create Trello Ticket on Failure
+      # ------------------------------------------------
+      # 13. Create Trello Card On Failure
+      # ------------------------------------------------
+      - name: Create Trello Card
         if: steps.test_step.outputs.outcome == 'failure'
         env:
           TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
@@ -173,28 +168,24 @@ jobs:
           BRANCH: ${{ github.ref_name }}
           RUN_NUM: ${{ github.run_number }}
         run: |
-          echo "Tests failed — creating Trello card..."
-
           FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception\|Tests run" test_output.txt \
             | head -20 | cut -c1-500 || echo "See CI logs for details.")
 
-          DESCRIPTION=$(printf 'Automation tests failed on branch: %s\n\nFailed at: %s\nRun logs: %s\n\n== Failure snippet ==\n%s' \
+          DESCRIPTION=$(printf 'Automation tests failed on branch: %s\n\nRun URL: %s\n\nFailure Snippet:\n%s' \
             "$BRANCH" \
-            "$(date -u '+%Y-%m-%d %H:%M UTC')" \
             "$RUN_URL" \
             "$FAILURE_SNIPPET")
 
           curl -s -X POST \
             "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
             --data-urlencode "idList=${TRELLO_LIST_ID}" \
-            --data-urlencode "name=QA Failure: ${BRANCH} [run #${RUN_NUM}]" \
-            --data-urlencode "desc=${DESCRIPTION}" \
-            --data-urlencode "pos=top"
+            --data-urlencode "name=QA Failure: ${BRANCH} [Run #${RUN_NUM}]" \
+            --data-urlencode "desc=${DESCRIPTION}"
 
-      # ─────────────────────────────────────────────
+      # ------------------------------------------------
       # 14. Create Pull Request On Success
-      # ─────────────────────────────────────────────
-      - name: Create Pull Request on Success
+      # ------------------------------------------------
+      - name: Create Pull Request
         if: steps.test_step.outputs.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -203,8 +194,6 @@ jobs:
           ACTOR: ${{ github.actor }}
           RUN_NUM: ${{ github.run_number }}
         run: |
-          echo "All tests passed — creating PR to main..."
-
           EXISTING=$(gh pr list \
             --head "$BRANCH" \
             --base main \
@@ -212,13 +201,13 @@ jobs:
             --jq '.[0].number')
 
           if [ -n "$EXISTING" ]; then
-            echo "PR #$EXISTING already exists for $BRANCH -> main. Skipping."
+            echo "PR already exists"
           else
-            PR_BODY=$(printf 'Automated PR after all Appium tests passed on %s.\n\nRun: %s\nTriggered by: @%s' \
-              "$BRANCH" "$RUN_URL" "$ACTOR")
+            PR_BODY=$(printf 'Automated PR after Appium tests passed.\n\nRun URL: %s\nTriggered by: @%s' \
+              "$RUN_URL" "$ACTOR")
 
             gh pr create \
-              --title "Auto-PR: $BRANCH -> main [run #$RUN_NUM]" \
+              --title "Auto PR: $BRANCH -> main [Run #$RUN_NUM]" \
               --body "$PR_BODY" \
               --base main \
               --head "$BRANCH"
