@@ -1,4 +1,4 @@
-name: QA Pipeline (Appium & Trello)
+name: QA Pipeline (Self-Hosted Appium + Trello)
 
 on:
   workflow_dispatch:
@@ -13,84 +13,125 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
+    runs-on: [self-hosted, linux, android]
+    timeout-minutes: 45
 
     steps:
-      # ── 1. Checkout ────────────────────────────────────────────────────────
+
+      # ─────────────────────────────────────────────
+      # 1. Checkout Repository
+      # ─────────────────────────────────────────────
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ── 2. Java (must be before Flutter) ──────────────────────────────────
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+      # ─────────────────────────────────────────────
+      # 2. Verify Installed Dependencies
+      # ─────────────────────────────────────────────
+      - name: Verify Java
+        run: java -version
 
-      # ── 3. Flutter + APK ───────────────────────────────────────────────────
+      - name: Verify Maven
+        run: mvn -version
+
+      - name: Verify Node.js
+        run: node -v
+
+      - name: Verify Appium
+        run: appium -v
+
+      # ─────────────────────────────────────────────
+      # 3. Setup Flutter
+      # ─────────────────────────────────────────────
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
 
+      # ─────────────────────────────────────────────
+      # 4. Install Flutter Dependencies
+      # ─────────────────────────────────────────────
       - name: Install Flutter Dependencies
         run: flutter pub get
 
+      # ─────────────────────────────────────────────
+      # 5. Build APK
+      # ─────────────────────────────────────────────
       - name: Build Debug APK
         run: flutter build apk --debug
 
-      # ── 4. Node + Appium ───────────────────────────────────────────────────
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Appium
+      # ─────────────────────────────────────────────
+      # 6. Verify Emulator Is Running
+      # ─────────────────────────────────────────────
+      - name: Verify Emulator
         run: |
-          npm install -g appium
-          appium driver install uiautomator2
+          echo "Checking connected Android devices..."
+          adb devices
 
-      # ── 5. Run Appium Tests ────────────────────────────────────────────────
+          echo "Waiting for emulator..."
+          adb wait-for-device
+
+          echo "Waiting for Android boot completion..."
+
+          until adb shell getprop sys.boot_completed 2>/dev/null | grep -q "1"; do
+            echo "Android still booting..."
+            sleep 5
+          done
+
+          echo "Android emulator fully booted"
+
+      # ─────────────────────────────────────────────
+      # 7. Verify Appium Server
+      # ─────────────────────────────────────────────
+      - name: Verify Appium Server
+        run: |
+          echo "Checking Appium server..."
+
+          curl --fail http://127.0.0.1:4723/wd/hub/status
+
+      # ─────────────────────────────────────────────
+      # 8. Install APK Into Emulator
+      # ─────────────────────────────────────────────
+      - name: Install APK
+        run: |
+          echo "Installing APK into emulator..."
+
+          adb install -r build/app/outputs/flutter-apk/app-debug.apk
+
+      # ─────────────────────────────────────────────
+      # 9. Run Appium Maven Tests
+      # ─────────────────────────────────────────────
       - name: Run Appium Tests
-        uses: reactivecircus/android-emulator-runner@v2
         continue-on-error: true
-        with:
-          api-level: 29
-          arch: x86_64
-          profile: pixel
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: |
-            echo "Waiting for device..."
-            adb wait-for-device
+        run: |
+          echo "Running Maven Appium tests..."
 
-            echo "Installing APK..."
-            adb install -r build/app/outputs/flutter-apk/app-debug.apk
+          mvn -f test/MobileAutomation/pom.xml test \
+            > test_output.txt 2>&1
 
-            echo "Starting Appium Server..."
-            appium --address 127.0.0.1 --port 4723 --base-path /wd/hub &
-            sleep 25
+          echo $? > test_exit_code.txt
 
-            echo "Executing Maven Tests..."
-            mvn -f test/MobileAutomation/pom.xml test > test_output.txt 2>&1
-            echo $? > test_exit_code.txt
-            cat test_output.txt
+          cat test_output.txt
 
-      # ── 6. Capture Test Outcome ────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+      # 10. Capture Test Outcome
+      # ─────────────────────────────────────────────
       - name: Capture Test Outcome
         id: test_step
         run: |
           EXIT_CODE=$(cat test_exit_code.txt 2>/dev/null || echo "1")
+
           echo "Maven exit code: $EXIT_CODE"
+
           if [ "$EXIT_CODE" -eq 0 ]; then
             echo "outcome=success" >> "$GITHUB_OUTPUT"
           else
             echo "outcome=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # ── 7. Upload Test Output ──────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+      # 11. Upload Test Logs
+      # ─────────────────────────────────────────────
       - name: Upload Test Output
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,7 +140,9 @@ jobs:
           path: test_output.txt
           retention-days: 7
 
-      # ── 8. Create Trello Card on Failure ───────────────────────────────────
+      # ─────────────────────────────────────────────
+      # 12. Create Trello Ticket On Failure
+      # ─────────────────────────────────────────────
       - name: Create Trello Ticket on Failure
         if: steps.test_step.outputs.outcome == 'failure'
         env:
@@ -128,7 +171,9 @@ jobs:
             --data-urlencode "desc=${DESCRIPTION}" \
             --data-urlencode "pos=top"
 
-      # ── 9. Create Pull Request on Success ─────────────────────────────────
+      # ─────────────────────────────────────────────
+      # 13. Create Pull Request On Success
+      # ─────────────────────────────────────────────
       - name: Create Pull Request on Success
         if: steps.test_step.outputs.outcome == 'success'
         env:
