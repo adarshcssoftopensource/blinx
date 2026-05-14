@@ -19,7 +19,7 @@ jobs:
 
     env:
       ANDROID_HOME: /home/azureuser/android-sdk
-      PATH: /home/azureuser/android-sdk/platform-tools:/home/azureuser/android-sdk/emulator:/home/azureuser/android-sdk/cmdline-tools/latest/bin:${{ env.PATH }}
+      PATH: /home/azureuser/android-sdk/platform-tools:/home/azureuser/android-sdk/emulator:/home/azureuser/android-sdk/cmdline-tools/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
     steps:
 
