@@ -121,7 +121,7 @@ jobs:
         run: |
           echo "Running Appium Maven tests..."
 
-          mvn -f test/MobileAutomation/pom.xml test \
+          mvn -f tests/MobileAutomation/pom.xml test \
           > test_output.txt 2>&1
 
           echo $? > test_exit_code.txt
