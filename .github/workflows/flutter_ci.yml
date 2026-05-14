@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: [self-hosted, linux, android]
+    runs-on: [self-hosted, linux]
     timeout-minutes: 45
 
     steps:
