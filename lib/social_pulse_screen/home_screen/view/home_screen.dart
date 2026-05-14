@@ -66,6 +66,11 @@ class HomeScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: GestureDetector(
+                // onTap: () => Get.to(() => ProfileScreen()),
+                // child: Container(
+                //   height: 38,
+                //   width: 38,
+                key: const Key('home_profile_avatar'),
                 onTap: () => Get.to(() => ProfileScreen()),
                 child: Container(
                   height: 38,
@@ -148,8 +153,7 @@ class HomeScreen extends StatelessWidget {
                         subtitle: AppConstants.connectionErrorHandling,
                         buttonText: AppConstants.retry,
                         onButtonTap: () {
-                          Get.back();
-                          Get.to(() => const CreatePostPrivateScreen());
+                          controller.refreshFeed();
                         },
                       ),
                     ),
@@ -182,6 +186,11 @@ class HomeScreen extends StatelessWidget {
         }),
 
         floatingActionButton: GestureDetector(
+          // onTap: () => Get.to(() => const CreatePostPrivateScreen()),
+          // child: Container(
+          //   width: 56,
+          //   height: 56,
+          key: const Key('home_fab_create_post'),
           onTap: () => Get.to(() => const CreatePostPrivateScreen()),
           child: Container(
             width: 56,
@@ -238,6 +247,11 @@ class HomeScreen extends StatelessWidget {
 
   Widget _bluetoothBanner(BuildContext context) {
     return GestureDetector(
+      // onTap: () => showDialog(
+      //   context: context,
+      //   barrierColor: Colors.black.withOpacity(0.3),
+      //   builder: (context) => BluetoothPopup(),
+      key: const Key('home_bluetooth_banner'),
       onTap: () => showDialog(
         context: context,
         barrierColor: Colors.black.withOpacity(0.3),
@@ -495,17 +509,30 @@ class HomeScreen extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
+                  // _actionBox(
+                  //   Icons.favorite,
+                  //   blink.likeCount.toString(),
+                  //   isActive: blink.isLikedByMe,
+                  //   isLikeButton: true,
+                  //   onTap: () => controller.toggleLike(blink.id),
+                  // ),
                   _actionBox(
                     Icons.favorite,
                     blink.likeCount.toString(),
+                    key: Key('like_btn_${blink.id}'),
                     isActive: blink.isLikedByMe,
                     isLikeButton: true,
                     onTap: () => controller.toggleLike(blink.id),
                   ),
                   const SizedBox(width: 8),
+                  // _actionBox(
+                  //   Icons.chat_bubble_outline,
+                  //   blink.commentCount.toString(),
+                  //   onTap: () => Get.to(
                   _actionBox(
                     Icons.chat_bubble_outline,
                     blink.commentCount.toString(),
+                    key: Key('comment_btn_${blink.id}'),
                     onTap: () => Get.to(
                       () => const CommentsScreen(),
                       arguments: {
@@ -519,9 +546,14 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  // _actionBox(
+                  //   Icons.reply,
+                  //   blink.shareCount.toString(),
+                  //   onTap: () => showModalBottomSheet(
                   _actionBox(
                     Icons.reply,
                     blink.shareCount.toString(),
+                    key: Key('share_btn_${blink.id}'),
                     onTap: () => showModalBottomSheet(
                       context: context,
                       backgroundColor: Colors.transparent,
@@ -545,16 +577,26 @@ class HomeScreen extends StatelessWidget {
     });
   }
 
+  // Widget _actionBox(
+  //   IconData icon,
+  //   String count, {
+  //   bool isActive = false,
   Widget _actionBox(
     IconData icon,
     String count, {
+    Key? key,
     bool isActive = false,
     VoidCallback? onTap,
     String? imagePath,
     bool isLikeButton = false,
     bool flipIcon = false,
   }) {
+    // return GestureDetector(
+    //   onTap: onTap,
+    //   child: Container(
+    //     height: 31,
     return GestureDetector(
+      key: key,
       onTap: onTap,
       child: Container(
         height: 31,
