@@ -65,40 +65,41 @@ class HomeScreen extends StatelessWidget {
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: GestureDetector(
-                // onTap: () => Get.to(() => ProfileScreen()),
-                // child: Container(
-                //   height: 38,
-                //   width: 38,
-                key: const Key('home_profile_avatar'),
-                onTap: () => Get.to(() => ProfileScreen()),
-                child: Container(
-                  height: 38,
-                  width: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: ColorConstants.redColor,
-                      width: 2,
+              child: Semantics(
+                identifier: 'home_profile_avatar',
+                label: 'home_profile_avatar',
+                button: true,
+                child: GestureDetector(
+                  key: const Key('home_profile_avatar'),
+                  onTap: () => Get.to(() => ProfileScreen()),
+                  child: Container(
+                    height: 38,
+                    width: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: ColorConstants.redColor,
+                        width: 2,
+                      ),
                     ),
+                    child: Obx(() {
+                      final image = AuthController.to.profileImage.value;
+                      final ts = DateTime.now().millisecondsSinceEpoch;
+                      return CircleAvatar(
+                        backgroundColor: Colors.grey.shade300,
+                        backgroundImage: image.isNotEmpty
+                            ? NetworkImage("$image?v=$ts")
+                            : null,
+                        child: image.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                size: 18,
+                                color: Colors.grey,
+                              )
+                            : null,
+                      );
+                    }),
                   ),
-                  child: Obx(() {
-                    final image = AuthController.to.profileImage.value;
-                    final ts = DateTime.now().millisecondsSinceEpoch;
-                    return CircleAvatar(
-                      backgroundColor: Colors.grey.shade300,
-                      backgroundImage: image.isNotEmpty
-                          ? NetworkImage("$image?v=$ts")
-                          : null,
-                      child: image.isEmpty
-                          ? const Icon(
-                              Icons.person,
-                              size: 18,
-                              color: Colors.grey,
-                            )
-                          : null,
-                    );
-                  }),
                 ),
               ),
             ),
@@ -185,21 +186,22 @@ class HomeScreen extends StatelessWidget {
           );
         }),
 
-        floatingActionButton: GestureDetector(
-          // onTap: () => Get.to(() => const CreatePostPrivateScreen()),
-          // child: Container(
-          //   width: 56,
-          //   height: 56,
-          key: const Key('home_fab_create_post'),
-          onTap: () => Get.to(() => const CreatePostPrivateScreen()),
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: const BoxDecoration(
-              color: Color(0xFFD8DBDF),
-              shape: BoxShape.circle,
+        floatingActionButton: Semantics(
+          identifier: 'home_fab_create_post',
+          label: 'home_fab_create_post',
+          button: true,
+          child: GestureDetector(
+            key: const Key('home_fab_create_post'),
+            onTap: () => Get.to(() => const CreatePostPrivateScreen()),
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: Color(0xFFD8DBDF),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add, color: Color(0xFF0E1A2B), size: 42),
             ),
-            child: const Icon(Icons.add, color: Color(0xFF0E1A2B), size: 42),
           ),
         ),
 
@@ -246,53 +248,54 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _bluetoothBanner(BuildContext context) {
-    return GestureDetector(
-      // onTap: () => showDialog(
-      //   context: context,
-      //   barrierColor: Colors.black.withOpacity(0.3),
-      //   builder: (context) => BluetoothPopup(),
-      key: const Key('home_bluetooth_banner'),
-      onTap: () => showDialog(
-        context: context,
-        barrierColor: Colors.black.withOpacity(0.3),
-        builder: (context) => BluetoothPopup(),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFC0C0C0), width: 1),
+    return Semantics(
+      identifier: 'home_bluetooth_banner',
+      label: 'home_bluetooth_banner',
+      button: true,
+      child: GestureDetector(
+        key: const Key('home_bluetooth_banner'),
+        onTap: () => showDialog(
+          context: context,
+          barrierColor: Colors.black.withOpacity(0.3),
+          builder: (context) => BluetoothPopup(),
         ),
-        child: Row(
-          children: [
-            Image.asset(ImageConstants.redFlag, width: 25, height: 16),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  LargeText(text: AppConstants.nearBlinks),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: SmallText(
-                          text: AppConstants.turnOnBluetoothToView,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFC0C0C0), width: 1),
+          ),
+          child: Row(
+            children: [
+              Image.asset(ImageConstants.redFlag, width: 25, height: 16),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    LargeText(text: AppConstants.nearBlinks),
+                    SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: SmallText(
+                            text: AppConstants.turnOnBluetoothToView,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 2),
-                      Icon(Icons.bluetooth, size: 14),
-                    ],
-                  ),
-                ],
+                        SizedBox(width: 2),
+                        Icon(Icons.bluetooth, size: 14),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            SvgPicture.asset(ImageConstants.crossIcon),
-          ],
+              const SizedBox(width: 8),
+              SvgPicture.asset(ImageConstants.crossIcon),
+            ],
+          ),
         ),
       ),
     );
@@ -310,192 +313,248 @@ class HomeScreen extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: () => Get.to(() => PostDetailScreen(blinkId: blink.id)),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(15, 12, 16, 1),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF2A73EA),
-                        width: 1.5,
+          // ── Author Row — tap karo PostDetailScreen khulti hai ──
+          Semantics(
+            identifier: 'post_card_${blink.id}',
+            label: 'post_card_${blink.id}',
+            button: true,
+            child: GestureDetector(
+              key: Key('post_card_${blink.id}'),
+              onTap: () => Get.to(() => PostDetailScreen(blinkId: blink.id)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(15, 12, 16, 1),
+                child: Row(
+                  children: [
+                    Semantics(
+                      identifier: 'post_author_avatar_${blink.id}',
+                      label: 'post_author_avatar_${blink.id}',
+                      button: true,
+                      child: Container(
+                        key: Key('post_author_avatar_${blink.id}'),
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF2A73EA),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: blink.author.profileImage.isNotEmpty
+                              ? Image.network(
+                                  blink.author.profileImage,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return const ShimmerLoader(
+                                      height: 44,
+                                      width: 44,
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(22),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : const Icon(Icons.person, size: 20),
+                        ),
                       ),
                     ),
-                    child: ClipOval(
-                      child: blink.author.profileImage.isNotEmpty
-                          ? Image.network(
-                              blink.author.profileImage,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return const ShimmerLoader(
-                                  height: 44,
-                                  width: 44,
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Semantics(
+                                identifier: 'post_author_name_${blink.id}',
+                                label: 'post_author_name_${blink.id}',
+                                child: Text(
+                                  key: Key('post_author_name_${blink.id}'),
+                                  blink.author.name,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                );
-                              },
-                            )
-                          : const Icon(Icons.person, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              blink.author.name,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            if (blink.author.isVerified)
-                              Row(
-                                children: [
-                                  Image.asset(
-                                    CommonUi.setPngIcon("verified"),
-                                    width: 14,
-                                    height: 14,
+                              const Spacer(),
+                              if (blink.author.isVerified)
+                                Row(
+                                  children: [
+                                    Image.asset(
+                                      CommonUi.setPngIcon("verified"),
+                                      width: 14,
+                                      height: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      AppConstants.verified,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 1),
+                          Row(
+                            children: [
+                              Semantics(
+                                identifier: 'post_time_${blink.id}',
+                                label: 'post_time_${blink.id}',
+                                child: Text(
+                                  key: Key('post_time_${blink.id}'),
+                                  _timeAgo(blink.createdAt),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF7A7A7A),
                                   ),
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    AppConstants.verified,
-                                    style: TextStyle(
+                                ),
+                              ),
+                              if (blink.locationName.isNotEmpty) ...[
+                                const Text(
+                                  " · ",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF7A7A7A),
+                                  ),
+                                ),
+                                Semantics(
+                                  identifier: 'post_location_${blink.id}',
+                                  label: 'post_location_${blink.id}',
+                                  child: Text(
+                                    key: Key('post_location_${blink.id}'),
+                                    blink.locationName,
+                                    style: const TextStyle(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF7A7A7A),
                                     ),
                                   ),
-                                ],
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 1),
-                        Row(
-                          children: [
-                            Text(
-                              _timeAgo(blink.createdAt),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF7A7A7A),
-                              ),
-                            ),
-                            if (blink.locationName.isNotEmpty) ...[
-                              const Text(
-                                " · ",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF7A7A7A),
                                 ),
-                              ),
-                              Text(
-                                blink.locationName,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF7A7A7A),
-                                ),
-                              ),
+                              ],
                             ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
 
           const SizedBox(height: 1),
 
-          Padding(
-            padding: const EdgeInsets.only(left: 70, right: 16),
-            child: Text(
-              blink.content,
-              style: const TextStyle(fontSize: 13, height: 0),
+          // ── Post Content Text ──
+          Semantics(
+            identifier: 'post_content_${blink.id}',
+            label: 'post_content_${blink.id}',
+            child: Padding(
+              padding: const EdgeInsets.only(left: 70, right: 16),
+              child: Text(
+                key: Key('post_content_${blink.id}'),
+                blink.content,
+                style: const TextStyle(fontSize: 13, height: 0),
+              ),
             ),
           ),
 
           const SizedBox(height: 4),
 
-          Padding(
-            padding: const EdgeInsets.only(left: 68, right: 16),
-            child: Text(
-              "#${blink.topic.name}",
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          if (blink.imageUrl != null && blink.imageUrl!.isNotEmpty)
-            GestureDetector(
-              onTap: () => showDialog(
-                context: context,
-                barrierColor: Colors.black.withOpacity(0.9),
-                builder: (context) => Stack(
-                  children: [
-                    Center(
-                      child: InteractiveViewer(
-                        child: Image.network(
-                          blink.imageUrl!,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.image,
-                                size: 60,
-                                color: Colors.white,
-                              ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 48,
-                      left: 16,
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Image.asset(
-                          CommonUi.setPngIcon("left_vector"),
-                          height: 15,
-                          width: 15,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
+          // ── Topic Tag ──
+          Semantics(
+            identifier: 'post_topic_${blink.id}',
+            label: 'post_topic_${blink.id}',
+            child: Padding(
+              padding: const EdgeInsets.only(left: 68, right: 16),
+              child: Text(
+                key: Key('post_topic_${blink.id}'),
+                "#${blink.topic.name}",
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              child: Container(
-                width: double.infinity,
-                height: 230,
-                margin: const EdgeInsets.only(left: 68, right: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          // ── Post Image ──
+          if (blink.imageUrl != null && blink.imageUrl!.isNotEmpty)
+            Semantics(
+              identifier: 'post_image_${blink.id}',
+              label: 'post_image_${blink.id}',
+              button: true,
+              child: GestureDetector(
+                key: Key('post_image_${blink.id}'),
+                onTap: () => showDialog(
+                  context: context,
+                  barrierColor: Colors.black.withOpacity(0.9),
+                  builder: (context) => Stack(
+                    children: [
+                      Center(
+                        child: InteractiveViewer(
+                          child: Image.network(
+                            blink.imageUrl!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                                  Icons.image,
+                                  size: 60,
+                                  color: Colors.white,
+                                ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 48,
+                        left: 16,
+                        child: Semantics(
+                          identifier: 'post_image_close_${blink.id}',
+                          label: 'post_image_close_${blink.id}',
+                          button: true,
+                          child: GestureDetector(
+                            key: Key('post_image_close_${blink.id}'),
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Image.asset(
+                              CommonUi.setPngIcon("left_vector"),
+                              height: 15,
+                              width: 15,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: Image.network(
-                  blink.imageUrl!,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const ShimmerLoader(
-                      height: 230,
-                      width: double.infinity,
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Icon(Icons.image, size: 40, color: Colors.grey),
+                child: Container(
+                  width: double.infinity,
+                  height: 230,
+                  margin: const EdgeInsets.only(left: 68, right: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.network(
+                    blink.imageUrl!,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const ShimmerLoader(
+                        height: 230,
+                        width: double.infinity,
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: Icon(Icons.image, size: 40, color: Colors.grey),
+                    ),
                   ),
                 ),
               ),
@@ -503,36 +562,30 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 10),
 
+          // ── Action Buttons Row ──
           Padding(
             padding: const EdgeInsets.only(left: 68, right: 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  // _actionBox(
-                  //   Icons.favorite,
-                  //   blink.likeCount.toString(),
-                  //   isActive: blink.isLikedByMe,
-                  //   isLikeButton: true,
-                  //   onTap: () => controller.toggleLike(blink.id),
-                  // ),
+                  // ── Like Button ──
                   _actionBox(
                     Icons.favorite,
                     blink.likeCount.toString(),
                     key: Key('like_btn_${blink.id}'),
+                    semanticIdentifier: 'like_btn_${blink.id}',
                     isActive: blink.isLikedByMe,
                     isLikeButton: true,
                     onTap: () => controller.toggleLike(blink.id),
                   ),
                   const SizedBox(width: 8),
-                  // _actionBox(
-                  //   Icons.chat_bubble_outline,
-                  //   blink.commentCount.toString(),
-                  //   onTap: () => Get.to(
+                  // ── Comment Button ──
                   _actionBox(
                     Icons.chat_bubble_outline,
                     blink.commentCount.toString(),
                     key: Key('comment_btn_${blink.id}'),
+                    semanticIdentifier: 'comment_btn_${blink.id}',
                     onTap: () => Get.to(
                       () => const CommentsScreen(),
                       arguments: {
@@ -546,14 +599,12 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // _actionBox(
-                  //   Icons.reply,
-                  //   blink.shareCount.toString(),
-                  //   onTap: () => showModalBottomSheet(
+                  // ── Share Button ──
                   _actionBox(
                     Icons.reply,
                     blink.shareCount.toString(),
                     key: Key('share_btn_${blink.id}'),
+                    semanticIdentifier: 'share_btn_${blink.id}',
                     onTap: () => showModalBottomSheet(
                       context: context,
                       backgroundColor: Colors.transparent,
@@ -577,62 +628,63 @@ class HomeScreen extends StatelessWidget {
     });
   }
 
-  // Widget _actionBox(
-  //   IconData icon,
-  //   String count, {
-  //   bool isActive = false,
+  // ── Semantics INSIDE _actionBox wrapping GestureDetector ──
   Widget _actionBox(
     IconData icon,
     String count, {
     Key? key,
+    String? semanticIdentifier,
     bool isActive = false,
     VoidCallback? onTap,
     String? imagePath,
     bool isLikeButton = false,
     bool flipIcon = false,
   }) {
-    // return GestureDetector(
-    //   onTap: onTap,
-    //   child: Container(
-    //     height: 31,
-    return GestureDetector(
-      key: key,
-      onTap: onTap,
-      child: Container(
-        height: 31,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF1F1F1),
-          borderRadius: BorderRadius.circular(15.5),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            imagePath != null
-                ? Image.asset(imagePath, width: 14, height: 14)
-                : Transform(
-                    alignment: Alignment.center,
-                    transform: flipIcon
-                        ? Matrix4.rotationY(3.14159)
-                        : Matrix4.identity(),
-                    child: Icon(
-                      isLikeButton
-                          ? (isActive ? Icons.favorite : Icons.favorite_border)
-                          : icon,
-                      size: 14,
-                      color: isActive ? Colors.red : Colors.black,
+    return Semantics(
+      identifier: semanticIdentifier ?? '',
+      label: semanticIdentifier ?? '',
+      button: true,
+      child: GestureDetector(
+        key: key,
+        onTap: onTap,
+        child: Container(
+          height: 31,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F1F1),
+            borderRadius: BorderRadius.circular(15.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              imagePath != null
+                  ? Image.asset(imagePath, width: 14, height: 14)
+                  : Transform(
+                      alignment: Alignment.center,
+                      transform: flipIcon
+                          ? Matrix4.rotationY(3.14159)
+                          : Matrix4.identity(),
+                      child: Icon(
+                        isLikeButton
+                            ? (isActive
+                                  ? Icons.favorite
+                                  : Icons.favorite_border)
+                            : icon,
+                        size: 14,
+                        color: isActive ? Colors.red : Colors.black,
+                      ),
                     ),
-                  ),
-            const SizedBox(width: 4),
-            Text(
-              count,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
+              const SizedBox(width: 4),
+              Text(
+                count,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -653,3 +705,4 @@ class HomeScreen extends StatelessWidget {
     }
   }
 }
+ 
