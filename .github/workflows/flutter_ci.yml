@@ -1,0 +1,136 @@
+name: QA Pipeline (Flutter & Trello)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - appium-devops
+      - 'feature/*'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ── 2. Flutter setup ───────────────────────────────────────────────────
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      # ── 3. Appium / Node setup ─────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Appium
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+
+      # ── 4. Run tests ───────────────────────────────────────────────────────
+      - name: Run Tests
+        id: test_step
+        continue-on-error: true
+        run: |
+          set +e
+          flutter test --reporter=expanded 2>&1 | tee flutter_test_output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+
+          echo "Flutter test exit code: $EXIT_CODE"
+
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "outcome=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "outcome=failure" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 5. Upload test output (always, for debugging) ──────────────────────
+      - name: Upload Test Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-test-output
+          path: flutter_test_output.txt
+          retention-days: 7
+
+      # ── 6. Create Trello Card on Failure ───────────────────────────────────
+      - name: Create Trello Ticket on Failure
+        if: steps.test_step.outputs.outcome == 'failure'
+        env:
+          TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
+          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+          TRELLO_LIST_ID: ${{ vars.TRELLO_LIST_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_NUM: ${{ github.run_number }}
+        run: |
+          echo "Tests failed — creating Trello card..."
+
+          FAILURE_SNIPPET=$(grep -A3 "FAILED\|Error\|Exception" flutter_test_output.txt \
+            | head -20 | cut -c1-500 || echo "See CI logs for details.")
+
+          DESCRIPTION=$(printf 'Automation tests failed on branch: %s\n\nFailed at: %s\nRun logs: %s\n\n== Failure snippet ==\n%s' \
+            "$BRANCH" \
+            "$(date -u '+%Y-%m-%d %H:%M UTC')" \
+            "$RUN_URL" \
+            "$FAILURE_SNIPPET")
+
+          echo "Calling Trello API..."
+          RESPONSE=$(curl -v -s -X POST \
+            "https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}" \
+            --data-urlencode "idList=${TRELLO_LIST_ID}" \
+            --data-urlencode "name=QA Failure: ${BRANCH} [run #${RUN_NUM}]" \
+            --data-urlencode "desc=${DESCRIPTION}" \
+            --data-urlencode "pos=top" 2>&1) || true
+
+          echo "Trello response:"
+          echo "$RESPONSE"
+
+      # ── 7. Create Pull Request on Success ─────────────────────────────────
+      - name: Create Pull Request on Success
+        if: steps.test_step.outputs.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+          RUN_NUM: ${{ github.run_number }}
+        run: |
+          echo "All tests passed — creating PR to main..."
+
+          EXISTING=$(gh pr list \
+            --head "$BRANCH" \
+            --base main \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for $BRANCH -> main. Skipping."
+          else
+            PR_BODY=$(printf 'Automated PR after all Flutter tests passed on %s.\n\nRun: %s\nTriggered by: @%s' \
+              "$BRANCH" "$RUN_URL" "$ACTOR")
+
+            gh pr create \
+              --title "Auto-PR: ${BRANCH} passed QA [run #${RUN_NUM}]" \
+              --body "$PR_BODY" \
+              --base main \
+              --head "$BRANCH"
+
+            echo "PR created."
+          fi
