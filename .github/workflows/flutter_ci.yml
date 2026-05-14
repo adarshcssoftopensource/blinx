@@ -2,6 +2,7 @@ name: QA Pipeline (Self-Hosted Appium + Trello)
 
 on:
   workflow_dispatch:
+
   push:
     branches:
       - appium-devops
@@ -14,7 +15,11 @@ permissions:
 jobs:
   test:
     runs-on: [self-hosted, linux]
-    timeout-minutes: 45
+    timeout-minutes: 60
+
+    env:
+      ANDROID_HOME: /home/azureuser/android-sdk
+      PATH: /home/azureuser/android-sdk/platform-tools:/home/azureuser/android-sdk/emulator:/home/azureuser/android-sdk/cmdline-tools/latest/bin:${{ env.PATH }}
 
     steps:
 
@@ -36,17 +41,19 @@ jobs:
       - name: Verify Node.js
         run: node -v
 
+      - name: Verify Flutter
+        run: flutter --version
+
       - name: Verify Appium
         run: appium -v
 
       # ─────────────────────────────────────────────
-      # 3. Setup Flutter
+      # 3. Restart ADB
       # ─────────────────────────────────────────────
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
+      - name: Restart ADB
+        run: |
+          adb kill-server || true
+          adb start-server
 
       # ─────────────────────────────────────────────
       # 4. Install Flutter Dependencies
@@ -61,7 +68,17 @@ jobs:
         run: flutter build apk --debug
 
       # ─────────────────────────────────────────────
-      # 6. Verify Emulator Is Running
+      # 6. Upload APK Artifact
+      # ─────────────────────────────────────────────
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+      # ─────────────────────────────────────────────
+      # 7. Verify Emulator
       # ─────────────────────────────────────────────
       - name: Verify Emulator
         run: |
@@ -80,17 +97,20 @@ jobs:
 
           echo "Android emulator fully booted"
 
+          adb shell getprop sys.boot_completed
+
       # ─────────────────────────────────────────────
-      # 7. Verify Appium Server
+      # 8. Verify Appium Server
       # ─────────────────────────────────────────────
       - name: Verify Appium Server
         run: |
           echo "Checking Appium server..."
 
-          curl --fail http://127.0.0.1:4723/wd/hub/status
+          curl --fail --retry 5 --retry-delay 5 \
+            http://127.0.0.1:4723/wd/hub/status
 
       # ─────────────────────────────────────────────
-      # 8. Install APK Into Emulator
+      # 9. Install APK Into Emulator
       # ─────────────────────────────────────────────
       - name: Install APK
         run: |
@@ -99,7 +119,7 @@ jobs:
           adb install -r build/app/outputs/flutter-apk/app-debug.apk
 
       # ─────────────────────────────────────────────
-      # 9. Run Appium Maven Tests
+      # 10. Run Appium Maven Tests
       # ─────────────────────────────────────────────
       - name: Run Appium Tests
         continue-on-error: true
@@ -114,7 +134,7 @@ jobs:
           cat test_output.txt
 
       # ─────────────────────────────────────────────
-      # 10. Capture Test Outcome
+      # 11. Capture Test Outcome
       # ─────────────────────────────────────────────
       - name: Capture Test Outcome
         id: test_step
@@ -130,7 +150,7 @@ jobs:
           fi
 
       # ─────────────────────────────────────────────
-      # 11. Upload Test Logs
+      # 12. Upload Test Logs
       # ─────────────────────────────────────────────
       - name: Upload Test Output
         if: always()
@@ -141,7 +161,7 @@ jobs:
           retention-days: 7
 
       # ─────────────────────────────────────────────
-      # 12. Create Trello Ticket On Failure
+      # 13. Create Trello Ticket On Failure
       # ─────────────────────────────────────────────
       - name: Create Trello Ticket on Failure
         if: steps.test_step.outputs.outcome == 'failure'
@@ -172,7 +192,7 @@ jobs:
             --data-urlencode "pos=top"
 
       # ─────────────────────────────────────────────
-      # 13. Create Pull Request On Success
+      # 14. Create Pull Request On Success
       # ─────────────────────────────────────────────
       - name: Create Pull Request on Success
         if: steps.test_step.outputs.outcome == 'success'
