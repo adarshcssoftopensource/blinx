@@ -52,7 +52,7 @@ public class Login {
 	                 By.xpath("//android.widget.Button[@content-desc='Sign In']")
 	         );
 	         signInBtn.click();
-Assert.assertTrue(false, "Intentional failure for CI testing");
+          Assert.assertTrue(false, "Intentional failure for CI testing");
 	         
 	         
 	}
