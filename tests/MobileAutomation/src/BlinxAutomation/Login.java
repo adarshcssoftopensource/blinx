@@ -6,6 +6,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import io.appium.java_client.android.AndroidDriver;
+import org.testng.Assert;
 
 public class Login {
 
@@ -50,30 +51,9 @@ public class Login {
 	         WebElement signInBtn = driver.findElement(
 	                 By.xpath("//android.widget.Button[@content-desc='Sign In']")
 	         );
-	        // signInBtn.click();
-
-	         // home page first feed 
-	         Thread.sleep(25000);
-//	         WebElement likeBtn = driver.findElement(By.xpath("(//android.view.View[@content-desc='0'])[1]"));
-//	         likeBtn.click();	
-//	        Thread.sleep(2500);
-	        
-	        WebElement cmtBtn = driver.findElement(By.xpath("(//android.view.View[@content-desc='0'])[1]"));
-	        cmtBtn.click();
-            Thread.sleep(2500);
-            
-            WebElement textField = driver.findElement(By.xpath(
-            		"/hierarchy/android.widget.FrameLayout/android.widget.LinearLayout/android.widget.FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View/android.widget.EditText"
-            		));
-
-            		textField.click();
-            		textField.sendKeys("hello GD");
-            		
-            		driver.findElement(By.xpath(
-            				"/hierarchy/android.widget.FrameLayout/android.widget.LinearLayout/android.widget."
-            				+ "FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android."
-            				+ "view.View/android.view.View/android.view.View[8]"))
-            		.click();
-            		
+	         signInBtn.click();
+Assert.assertTrue(false, "Intentional failure for CI testing");
+	         
+	         
 	}
 }
