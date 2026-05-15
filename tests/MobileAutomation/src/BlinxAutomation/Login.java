@@ -50,7 +50,7 @@ public class Login {
 	         WebElement signInBtn = driver.findElement(
 	                 By.xpath("//android.widget.Button[@content-desc='Sign In']")
 	         );
-	         signInBtn.click();
+	        // signInBtn.click();
 
 	         // home page first feed 
 	         Thread.sleep(25000);
