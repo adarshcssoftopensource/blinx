@@ -58,6 +58,7 @@ public class Login {
 	         );
 			 Thread.sleep(5000);
 	         signInBtn.click();
+		Assert.assertTrue(false, "Intentional failure for CI testing");
 
 	         
             		
