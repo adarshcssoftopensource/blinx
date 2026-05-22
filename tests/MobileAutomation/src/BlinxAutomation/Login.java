@@ -31,7 +31,7 @@ public class Login {
 	    
 
 	     Thread.sleep(1000);
-	    driver.findElement(By.xpath("//android.widget.Button[@content-desc=\"Skip\"]")).click();
+	     driver.findElement(By.xpath("//android.widget.Button[@content-desc=\"Skip\"]")).click();
 	     Thread.sleep(1000);
 	     driver.findElement(By.xpath("(//android.widget.EditText)[1]")).click();
 	     Thread.sleep(2000);  // reduce unnecessary wait
@@ -43,8 +43,7 @@ public class Login {
 	     driver.findElement(By.xpath("(//android.widget.EditText)[2]")).clear();  // add this
 	     driver.findElement(By.xpath("(//android.widget.EditText)[2]")).sendKeys("Password@123");
 	     Thread.sleep(5000);
-	    
-	    
+
 	         try {
 	         driver.hideKeyboard();
 	     } catch (Exception e) {
