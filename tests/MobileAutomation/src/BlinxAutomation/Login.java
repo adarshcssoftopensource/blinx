@@ -8,6 +8,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+
 import io.appium.java_client.TouchAction;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.touch.LongPressOptions;
@@ -59,7 +61,7 @@ public class Login {
 			 Thread.sleep(5000);
 	         signInBtn.click();
 		Assert.assertTrue(false, "Intentional failure for CI testing");
-
+		Assert.assertTrue(true, "Intentional failure for CI testing");
 	         
             		
 //            		Thread.sleep(3000);
